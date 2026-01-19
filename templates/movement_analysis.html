@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Movement Analysis - Railway Visualization System</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Plotly for charts -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Navbar CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <!-- Movement Analysis specific CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='movement_analysis.css') }}">
+</head>
+<body>
+    <!-- Include the sidebar navigation -->
+    {% include 'navbar_template.html' %}
+
+    <!-- Main Content - with sidebar margin -->
+    <div class="content-wrapper">
+        <div class="container main-container">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="page-header">
+                        <h1 class="text-emphasis">
+                            <i class="fas fa-project-diagram" aria-hidden="true"></i> 
+                            Railway Movement Analysis
+                        </h1>
+                        <p class="lead">Upload data, analyze and visualize railway circuit movements with interactive plots</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Upload Section -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card upload-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-file-upload" aria-hidden="true"></i> Upload Railway Data Files</h4>
+                        </div>
+                        <div class="card-body">
+                            <!-- Template Downloads -->
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <h5 class="mb-3"><i class="fas fa-download"></i> Download Templates</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <a href="{{ url_for('main.get_template', template_type='route_chart') }}" 
+                                               class="btn btn-outline-primary btn-block mb-2 w-100">
+                                                <i class="fas fa-route"></i> Route Chart Template
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <a href="{{ url_for('main.get_template', template_type='circuit_data') }}" 
+                                               class="btn btn-outline-primary btn-block mb-2 w-100">
+                                                <i class="fas fa-project-diagram"></i> Circuit Data Template
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <!-- File Upload Form -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="routeChartFile" class="form-label">
+                                            <i class="fas fa-route" aria-hidden="true"></i> 
+                                            <span class="label-text">Route Chart CSV:</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="routeChartFile" accept=".csv" 
+                                               aria-describedby="routeChartHelp">
+                                        <small id="routeChartHelp" class="form-text text-helper">
+                                            Upload Route_chart.csv containing route definitions
+                                        </small>
+                                        <div class="upload-status" id="routeChartStatus"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="trackCircuitFile" class="form-label">
+                                            <i class="fas fa-project-diagram" aria-hidden="true"></i> 
+                                            <span class="label-text">Train Movements CSV:</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="trackCircuitFile" accept=".csv" 
+                                               aria-describedby="trackCircuitHelp">
+                                        <small id="trackCircuitHelp" class="form-text text-helper">
+                                            Upload Train Movements data CSV file
+                                        </small>
+                                        <div class="upload-status" id="trackCircuitStatus"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Upload Buttons -->
+                            <div class="text-center mt-4">
+                                <button type="button" class="btn btn-primary btn-lg" id="uploadFilesBtn">
+                                    <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Upload Files
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg ms-2" id="resetFilesBtn">
+                                    <i class="fas fa-undo" aria-hidden="true"></i> Reset
+                                </button>
+                            </div>
+
+                            <!-- Upload Status -->
+                            <div id="uploadStatus" class="alert alert-info mt-3 d-none">
+                                <i class="fas fa-spinner fa-spin"></i> Uploading files...
+                            </div>
+
+                            <!-- Current Files Info -->
+                            <div id="fileInfo" class="card mt-4 d-none">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-check-circle"></i> Current Data Files</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="fileInfoContent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Route Selection Card -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card selection-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-filter" aria-hidden="true"></i> Route Selection and Time Range</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="visualizationForm">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="route" class="form-label">
+                                                <i class="fas fa-map-signs" aria-hidden="true"></i> 
+                                                <span class="label-text">Select Routes:</span>
+                                            </label>
+                                            <select class="form-control form-select" id="route" multiple required 
+                                                    aria-describedby="routeHelp">
+                                                <option value="">Loading routes...</option>
+                                            </select>
+                                            <small id="routeHelp" class="form-text text-helper">
+                                                Choose one or more railway routes to visualize (hold Ctrl/Cmd to select multiple)
+                                            </small>
+                                        </div>
+                                        <div id="selectedRoutes" class="mt-2">
+                                            <!-- Selected routes will appear here as tags -->
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="from_date" class="form-label">
+                                                <i class="far fa-calendar-alt" aria-hidden="true"></i> 
+                                                <span class="label-text">From Date & Time:</span>
+                                            </label>
+                                            <input type="datetime-local" class="form-control" id="from_date" required 
+                                                   aria-describedby="fromDateHelp">
+                                            <small id="fromDateHelp" class="form-text text-helper">
+                                                Start date and time for analysis
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group mb-3">
+                                            <label for="to_date" class="form-label">
+                                                <i class="far fa-calendar-alt" aria-hidden="true"></i> 
+                                                <span class="label-text">To Date & Time:</span>
+                                            </label>
+                                            <input type="datetime-local" class="form-control" id="to_date" required 
+                                                   aria-describedby="toDateHelp">
+                                            <small id="toDateHelp" class="form-text text-helper">
+                                                End date and time for analysis
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg generate-btn" id="generateBtn">
+                                        <i class="fas fa-chart-area" aria-hidden="true"></i> Generate Visualization
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="row stats-row mt-4">
+                <div class="col-md-4">
+                    <div class="stats-card" id="routesStatsCard">
+                        <div class="stats-icon"><i class="fas fa-route" aria-hidden="true"></i></div>
+                        <div class="stats-info">
+                            <h5>Routes Available</h5>
+                            <h3 id="totalRoutes" class="stats-value">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stats-info">
+                            <h5>Time Period</h5>
+                            <h3 id="timePeriod" class="stats-value">0 hrs</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="fas fa-chart-pie"></i></div>
+                        <div class="stats-info">
+                            <h5>Data Points</h5>
+                            <h3 id="dataPoints" class="stats-value">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movement Count by Route -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-train" aria-hidden="true"></i> Movements by Route</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="routeMovementsContainer" class="route-movements-container">
+                                <p class="text-muted">Select routes to view movement counts</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Movement Times Section -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-stopwatch" aria-hidden="true"></i> Movement Times</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="movementTimesContainer">
+                                <p class="text-muted">Select a route to view movement times</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Details Tooltip -->
+            <div class="route-tooltip" id="routeTooltip">
+                <div class="route-tooltip-header">
+                    <h5 id="tooltipRouteId">Route Details</h5>
+                    <button type="button" class="tooltip-close-btn" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="route-tooltip-body">
+                    <div class="circuit-path" id="tooltipCircuitPath"></div>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden">
+                <div class="spinner">
+                    <div class="double-bounce1"></div>
+                    <div class="double-bounce2"></div>
+                </div>
+                <p class="loading-text">Generating visualization...</p>
+            </div>
+            
+            <!-- Visualization Output -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card viz-card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-chart-line" aria-hidden="true"></i> Visualization Output</h4>
+                            <div class="viz-controls">
+                                <button class="btn btn-sm btn-outline-light" id="downloadBtn" disabled 
+                                        aria-label="Download visualization">
+                                    <i class="fas fa-download" aria-hidden="true"></i> 
+                                    <span class="btn-text">Download</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="visualization" class="visualization-container" 
+                                 aria-label="Railway route visualization"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>        
+    
+            <!-- Footer -->
+            <footer class="footer mt-5">
+                <div class="container">
+                    <span class="footer-text">&copy; 2025 Railway Visualization System</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- JavaScript Files -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='movement_analysis.js') }}"></script>
+</body>
+</html>

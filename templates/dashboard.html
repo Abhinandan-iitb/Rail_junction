@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/navbar.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='dashboard.css') }}" rel="stylesheet">
+    <style>
+        .card-content {
+            padding: 15px;  /* Reduced padding slightly to fit content better */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card specific styles */
+        #train-movement .card-image {
+            background-image: url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
+            background-size: cover;
+        }
+
+        #signal-analysis .card-image {
+            background-image: url("{{ url_for('static', filename='images/railway.jpg') }}");
+            background-size: cover;
+        }
+
+        #data-visualization .card-image {
+            background-image: url("{{ url_for('static', filename='images/railway_image.jpg') }}");
+            background-size: cover;
+        }
+
+        #railway-data-visuals .card-image {
+            background-image: url("{{ url_for('static', filename='images/Shunting_data_Analytics.jpg') }}");
+            background-size: contain;  /* Changed to contain to show full image */
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-color: #d3d3d3;  /* Light gray background to match the image */
+        }
+
+        #shunting-visuals .card-image {
+            background-image: url("{{ url_for('static', filename='images/shunting_image.jpg') }}");
+            background-size: cover;
+        }
+    </style>
+</head>
+<body>
+    <!-- Include the sidebar navigation -->
+    {% include 'navbar_template.html' %}
+
+    <!-- Main Content - with sidebar margin -->
+    <div class="content-wrapper">
+        <div class="content-container">
+            <div class="dashboard-container">
+                <div class="dashboard-header mb-4">
+                    <h1 class="dashboard-title">Railway System</h1>
+                    <p class="dashboard-subtitle">Select a module to begin</p>
+                </div>
+                
+                <div class="card-grid">
+                    <!-- Data Visualization Card (Route Circuit) -->
+                    <div class="dashboard-card" id="data-visualization" onclick="window.location.href='/movement_analysis/'">
+                        <div class="card-image"></div>
+                        <div class="card-content">
+                            <div>
+                                <h2 class="card-title">Train Movement Analysis</h2>
+                                <p class="card-description">Visualize railway data and their routes</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Signal Analysis Card (Track Circuits) -->
+                    <div class="dashboard-card" id="signal-analysis" onclick="window.location.href='/circuit-switch-analysis/'">
+                        <div class="card-image"></div>
+                        <div class="card-content">
+                            <div>
+                                <h2 class="card-title">Track Circuits & Switches Analysis</h2>
+                                <p class="card-description">Analyze signal events and track circuits across the network</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Train Movement Analysis Card -->
+                    <div class="dashboard-card" id="train-movement" onclick="window.location.href='/train-movement/'">
+                        <div class="card-image"></div>
+                        <div class="card-content">
+                            <div>
+                                <h2 class="card-title">Train Movement simulation</h2>
+                                <p class="card-description">Visualize and analyze the movement of trains across the railway network</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Shunting movement Analytics Card -->
+                    <div class="dashboard-card" id="railway-data-visuals" onclick="window.location.href='/railway-data-visuals/'">
+                        <div class="card-image"></div>
+                        <div class="card-content">
+                            <div>
+                                <h2 class="card-title">Shunting Movement Analytics</h2>
+                                <p class="card-description">Interactive visualization of railway operational data</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Shunting Visuals Card -->
+                    <div class="dashboard-card" id="shunting-visuals" onclick="window.location.href='/shunting-visuals/'">
+                        <div class="card-image"></div>
+                        <div class="card-content">
+                            <div>
+                                <h2 class="card-title">Shunting Visuals</h2>
+                                <p class="card-description">Analyze and visualize railway shunting operations and patterns</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
+</head>
+</html>
+</body>
+</html>

@@ -1,0 +1,42 @@
+/* Updated Train icon styling */
+.train-icon {
+    position: absolute;
+    width: 16px;
+    height: 8px;
+    margin-left: -8px;
+    margin-top: -4px;
+    background-color: #FF0000;
+    border-radius: 2px;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: transform 0.5s linear, left 0.5s linear, top 0.5s linear;
+    transform-origin: center;
+}
+
+/* Front of the train indicator */
+.train-icon::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 6px solid #FF0000;
+    top: -6px;
+    left: calc(50% - 4px);
+}
+
+/* Train number/ID styling */
+.train-number {
+    position: absolute;
+    background-color: white;
+    color: #000;
+    font-size: 8px;
+    font-weight: bold;
+    padding: 1px 3px;
+    border-radius: 3px;
+    transform: translate(-50%, -150%);
+    white-space: nowrap;
+    text-shadow: 0 0 2px white;
+    z-index: 1001;
+}

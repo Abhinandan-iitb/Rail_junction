@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Running simulation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='navbar.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='train_status.css') }}" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <!-- Include the sidebar navigation -->
+    {% include 'navbar_template.html' %}
+
+    <!-- Main Content - with sidebar margin -->
+    <div class="content-wrapper">
+        <div class="content-container">
+            <!-- Visualization Container -->
+            <div class="visualization-container">
+                <!-- Color Scheme Box -->
+                <div class="color-scheme-box mb-4">
+                    <span class="fw-bold me-2">Legend:</span>
+                    <!-- Track color -->
+                    <div class="color-scheme-item">
+                        <span class="color-dot" style="background-color: #0066cc;"></span>
+                        <span>Inactive Track</span>
+                    </div>
+                    <!-- Keyboard controls info -->
+                    <div class="color-scheme-item ms-4">
+                        <i class="fas fa-keyboard me-2"></i>
+                        <small class="text-muted">
+                            Controls: ← → (Navigate) | Shift + ← → (Fast) | Space (Play/Pause) | R (Reset) | Home/End
+                        </small>
+                    </div>
+                </div>
+                
+                <h1><i class="fas fa-subway"></i> Train Running simulation </h1>
+                <p>Real-time visualization of train movements across the railway network</p>
+                
+                <!-- File Upload Section -->
+                <div class="mb-4">
+                    <h5 class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#fileUploadSection">
+                        <i class="fas fa-caret-down me-2"></i> Upload Railway Data Files
+                    </h5>
+                    
+                    <div id="fileUploadSection" class="collapse file-upload-section">
+                        <form id="fileUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="file-input-container">
+                                        <label for="nodesFile" class="file-input-label">Nodes CSV File:</label>
+                                        <input type="file" id="nodesFile" name="nodes_file" class="form-control file-input" accept=".csv">
+                                        <div class="file-requirements">Format: node, x, y</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="file-input-container">
+                                        <label for="edgesFile" class="file-input-label">Edges CSV File:</label>
+                                        <input type="file" id="edgesFile" name="edges_file" class="form-control file-input" accept=".csv">
+                                        <div class="file-requirements">Format: from, to, track_circuit_id, length</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="file-input-container">
+                                        <label for="circuitFile" class="file-input-label">Circuit Intervals CSV File:</label>
+                                        <input type="file" id="circuitFile" name="circuit_file" class="form-control file-input" accept=".csv">
+                                        <div class="file-requirements">Format: Track_Circuit, Circuit_Name, switch_name, Dntime, Uptime</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <button type="submit" id="uploadBtn" class="control-btn">
+                                    <i class="fas fa-upload"></i> Upload & Visualize
+                                </button>
+                                <button type="button" id="useDefaultBtn" class="control-btn">
+                                    <i class="fas fa-database"></i> Use Default Data
+                                </button>
+                            </div>
+                            
+                            <div id="uploadStatus" class="alert upload-status mt-3"></div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Route Selection (from second file) -->
+                <div class="mb-4">
+                    <h5 class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#routeSelectionSection">
+                        <i class="fas fa-caret-down me-2"></i> Route Selection
+                    </h5>
+                    
+                    <div id="routeSelectionSection" class="collapse route-selection-panel">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="route-select" class="form-label">Select Route to Visualize:</label>
+                                    <select class="form-select" id="route-select">
+                                        <option value="">All Routes</option>
+                                        <!-- Routes will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex justify-content-end mt-2">
+                                <button id="apply-route-filter" class="control-btn">
+                                    <i class="fas fa-filter"></i> Apply Filter
+                                </button>
+                                <button id="clear-route-filter" class="control-btn ms-2">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Net Group ID Selection -->
+                <div class="mb-4">
+                    <h5 class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#netGroupSection">
+                        <i class="fas fa-caret-down me-2"></i> Net Group ID Selection
+                    </h5>
+                    
+                    <div id="netGroupSection" class="collapse route-selection-panel">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="net-group-select" class="form-label">Select Net Group ID:</label>
+                                    <select class="form-select" id="net-group-select">
+                                        <option value="">All Net Groups</option>
+                                        <!-- Net Group IDs will be dynamically populated -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 d-flex justify-content-end mt-2">
+                                <button id="apply-net-group-filter" class="control-btn">
+                                    <i class="fas fa-filter"></i> Apply Filter
+                                </button>
+                                <button id="clear-net-group-filter" class="control-btn ms-2">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Enhance the date-time filter section -->
+                <div class="mb-4">
+                    <h5 class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#dateTimeFilterSection">
+                        <i class="fas fa-caret-down me-2"></i> Date & Time Filter
+                    </h5>
+                    
+                    <div id="dateTimeFilterSection" class="collapse route-selection-panel">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="form-group mb-3">
+                                    <label for="start-datetime" class="form-label">From Date & Time:</label>
+                                    <input type="datetime-local" id="start-datetime" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group mb-3">
+                                    <label for="end-datetime" class="form-label">To Date & Time:</label>
+                                    <input type="datetime-local" id="end-datetime" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end justify-content-end mb-3">
+                                <button id="apply-datetime-filter" class="control-btn">
+                                    <i class="fas fa-calendar-check"></i> Apply
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div id="datetime-filter-status" class="alert alert-info" style="display: none; margin-bottom: 0; flex-grow: 1;"></div>
+                            <button id="clear-datetime-filter" class="control-btn ms-2" style="display: none;">
+                                <i class="fas fa-times"></i> Clear Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Animation Controls -->
+                <div class="controls">
+                    <button id="play-pause-btn" class="control-btn">
+                        <i class="fas fa-play"></i> Play
+                    </button>
+                    <button id="reset-btn" class="control-btn">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                    <!-- Speed control buttons -->
+                    <button id="speed-decrease-btn" class="control-btn">
+                        <i class="fas fa-minus"></i> Slower
+                    </button>
+                    <button id="speed-increase-btn" class="control-btn">
+                        <i class="fas fa-plus"></i> Faster
+                    </button>
+                    <span id="speed-display" class="time-display">1x</span>
+                    
+                    <!-- Replace the slider with a container that includes tooltip -->
+                    <div class="slider-container">
+                        <input type="range" id="train-slider" min="0" max="100" value="0" step="0.01">
+                        <div id="slider-tooltip" class="slider-tooltip"></div>
+                    </div>
+                    
+                    <span id="time-display" class="time-display">Loading...</span>
+                </div>
+                
+                <!-- Train legend section -->
+                <div id="train-legend" class="train-legend">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span>Loading train information...</span>
+                </div>
+                
+                <div id="graph-container">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Loading train movement visualization...
+                    </div>
+                </div>
+                
+                <!-- Statistics Section -->
+                <div class="mt-4">
+                    <h5 class="collapse-toggle" data-bs-toggle="collapse" data-bs-target="#statisticsSection">
+                        <i class="fas fa-caret-down me-2"></i> Network Statistics
+                    </h5>
+                    
+                    <div id="statisticsSection" class="collapse">
+                        <div class="stats-grid mt-3">
+                            <div class="stat-card">
+                                <h6 class="text-muted">Active Tracks</h6>
+                                <div class="stat-value" id="active-tracks">--</div>
+                            </div>
+                            <div class="stat-card">
+                                <h6 class="text-muted">Total Tracks</h6>
+                                <div class="stat-value" id="total-tracks">--</div>
+                            </div>
+                            <div class="stat-card">
+                                <h6 class="text-muted">Active Trains</h6>
+                                <div class="stat-value" id="active-trains">--</div>
+                            </div>
+                            <div class="stat-card">
+                                <h6 class="text-muted">Network Occupancy</h6>
+                                <div class="stat-value" id="occupancy-rate">--</div>
+                                <div class="progress">
+                                    <div id="occupancy-bar" class="progress-bar bg-primary" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='train_status.js') }}"></script>
+</body>
+</html>

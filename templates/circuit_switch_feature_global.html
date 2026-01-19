@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Circuit Visualization | Professional Analysis</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Google Fonts - Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Navbar CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+    <!-- Common styles CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Page specific CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='circuit_switch_analysis.css') }}">
+    <script src="{{ url_for('static', filename='circuit_switch_analysis.js') }}"></script>
+    <!-- Sortable.js -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+    <!-- Include the sidebar navigation -->
+    {% include 'navbar_template.html' %}
+    
+    <!-- Main Content - with sidebar margin -->
+    <div class="content-wrapper">
+        <div class="page-container">
+            <div class="container-xl">
+                <!-- Header with breadcrumb -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                                <li class="breadcrumb-item active">Circuit Analysis</li>
+                            </ol>
+                        </nav>
+                        <h1 class="mt-2"><i class="fas fa-microchip text-primary me-2"></i>Railway Track Circuits and Switches Analysis</h1>
+                        <p class="text-muted lead">Analyze circuit and switch states with professional visualization tools</p>
+                    </div>
+                    <div class="d-none d-md-block">
+                        <img src="{{ url_for('static', filename='images/circuit-icon.png') }}" alt="Circuit analysis" width="80" class="img-fluid">
+                    </div>
+                </div>
+
+                <!-- Display errors if any -->
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show border-warning" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-3 fs-4"></i>
+                        <div>
+                            <strong>Error Encountered</strong>
+                            <p class="mb-0">{{ error }}</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+                
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Upload Data Button -->
+                <div class="d-flex justify-content-end mb-4">
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#uploadDataModal">
+                        <i class="fas fa-upload me-2"></i> Upload Data Files
+                    </button>
+                </div>
+                
+                <!-- Add File Upload Modal -->
+                <div class="modal fade" id="uploadDataModal" tabindex="-1" aria-labelledby="uploadDataModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="uploadDataModalLabel">Upload CSV Data Files</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="uploadDataForm" method="POST" action="{{ url_for('circuit_switch_analysis.upload_data') }}" enctype="multipart/form-data">
+                                    <!-- Circuit Data Upload -->
+                                    <div class="mb-3">
+                                        <label for="circuit_file" class="form-label">
+                                            <i class="fas fa-microchip text-primary me-1"></i> Circuit Data CSV
+                                        </label>
+                                        <input class="form-control" type="file" id="circuit_file" name="circuit_file" accept=".csv">
+                                        <div class="form-text">Expected columns: Circuit_name, Down_date, Down_time, Up_date, Up_time, Duration</div>
+                                    </div>
+                                    
+                                    <!-- Switch Data Upload -->
+                                    <div class="mb-3">
+                                        <label for="switch_file" class="form-label">
+                                            <i class="fas fa-exchange-alt text-success me-1"></i> Switch Data CSV
+                                        </label>
+                                        <input class="form-control" type="file" id="switch_file" name="switch_file" accept=".csv">
+                                        <div class="form-text">Expected columns: Switch_name, Down_date, Down_time, Up_date, Up_time, Duration</div>
+                                    </div>
+                                    
+                                    <!-- Current Data Files -->
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <small>
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>Current Data:</strong>
+                                            <ul class="mb-0 ps-3">
+                                                <li>Circuit File: <span id="current_circuit_file">{{ session.get('circuit_file_name', 'Default internal file') }}</span></li>
+                                                <li>Switch File: <span id="current_switch_file">{{ session.get('switch_file_name', 'Default internal file') }}</span></li>
+                                            </ul>
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                            <i class="fas fa-upload me-1"></i> Upload and Process
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" id="resetToDefault">
+                                            <i class="fas fa-undo me-1"></i> Reset to Default Data
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Display current data source info if using uploaded files -->
+                {% if session.get('using_uploaded_data', False) %}
+                <div class="alert alert-info mb-4 d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-file-upload fa-2x"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Using Custom Uploaded Data</h5>
+                        <p class="mb-1">Circuit data: {{ session.get('circuit_file_name', 'Unknown') }}</p>
+                        <p class="mb-0">Switch data: {{ session.get('switch_file_name', 'Unknown') }}</p>
+                    </div>
+                    <div class="ms-auto">
+                        <a href="{{ url_for('circuit_switch_analysis.reset_to_default_data') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-undo me-1"></i> Reset to Default Data
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="row g-4">
+                    <!-- Parameters Selection -->
+                    <div class="col-lg-5">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Analysis Parameters</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('circuit_switch_analysis.plot') }}">
+                                    <div class="row g-3">
+                                        <!-- Circuit Selection -->
+                                        <div class="col-md-6">
+                                            <label for="circuit_name" class="form-label">Primary Circuit:</label>
+                                            <select class="form-select" id="circuit_name" name="circuit_name" required>
+                                                <option value="" disabled selected>Select circuit</option>
+                                                {% for circuit in unique_circuits %}
+                                                    <option value="{{ circuit }}">{{ circuit }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">Main circuit for analysis</div>
+                                        </div>
+
+                                        <!-- Additional Circuits -->
+                                        <div class="col-md-6">
+                                            <label class="form-label">Additional Circuits:</label>
+                                            <div class="input-group mb-2">
+                                                <select class="form-select" id="circuit_selector">
+                                                    <option value="" selected disabled>Select circuit</option>
+                                                    {% for circuit in unique_circuits %}
+                                                        <option value="{{ circuit }}">{{ circuit }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button class="btn btn-outline-primary" type="button" id="add_circuit_btn">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+
+                                            <!-- Container for the ordered circuit list -->
+                                            <div id="selected_circuits_container" class="border rounded p-2 mb-2" style="min-height: 100px; max-height: 200px; overflow-y: auto;">
+                                                <div class="text-muted text-center py-3" id="no_circuits_message">
+                                                    <small>No additional circuits selected</small>
+                                                </div>
+                                                <ul id="selected_circuits_list" class="list-group list-group-flush circuit-list">
+                                                    <!-- Selected circuits will be added here dynamically -->
+                                                </ul>
+                                            </div>
+
+                                            <div class="form-text">Circuits will appear in plots in the order shown above</div>
+                                            
+                                            <!-- Hidden input to store the ordered list of circuits for form submission -->
+                                            <div id="hidden_circuits_container">
+                                                <!-- Hidden inputs will be populated here -->
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Time Range -->
+                                        <div class="col-md-6">
+                                            <label for="from_time" class="form-label">Start Time:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="far fa-calendar"></i></span>
+                                                <input type="datetime-local" class="form-control" id="from_time" name="from_time" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <label for="to_time" class="form-label">End Time:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="far fa-calendar"></i></span>
+                                                <input type="datetime-local" class="form-control" id="to_time" name="to_time" required>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Duration Filter -->
+                                        <div class="col-12">
+                                            <label for="min_duration" class="form-label">Minimum Duration Filter:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="far fa-clock"></i></span>
+                                                <input type="text" class="form-control" id="min_duration" name="min_duration" value="00:00:50" placeholder="HH:MM:SS" required>
+                                                <button class="btn btn-outline-secondary" type="button" id="duration-help" data-bs-toggle="tooltip" data-bs-placement="top" title="Filter out events shorter than this duration">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Short Duration Threshold -->
+                                        <div class="col-12">
+                                            <label for="max_duration" class="form-label">Short Duration Threshold:</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text text-warning"><i class="fas fa-bolt"></i></span>
+                                                <input type="text" class="form-control" id="max_duration" name="max_duration" 
+                                                       value="{{ session.max_duration|default('00:00:20') }}" placeholder="HH:MM:SS">
+                                                <button class="btn btn-outline-warning" type="button" id="short-duration-help" data-bs-toggle="tooltip" 
+                                                        data-bs-placement="top" title="Events shorter than or equal to this duration will be shown in the Short Duration Events tab">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text">Events shorter than this duration will appear in the Short Duration Events tab</div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 mt-4">
+                                        <i class="fas fa-chart-line me-2"></i>Generate Analysis
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Parameters Card -->
+                    <div class="col-lg-7">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Analysis Configuration</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if selected_details %}
+                                    <div class="row">
+                                        <!-- Circuit Details -->
+                                        <div class="col-md-6">
+                                            <h6 class="text-uppercase text-muted mb-2">Circuit Selection</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">Primary Circuit:</label>
+                                                <div class="bg-light p-2 rounded">{{ selected_details.circuit_name }}</div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">Additional Circuits:</label>
+                                                <div class="bg-light p-2 rounded" style="min-height: 40px;">
+                                                    {% if selected_details.additional_circuits|length > 0 %}
+                                                        {% for circuit in selected_details.additional_circuits %}
+                                                            <span class="badge bg-primary me-1 mb-1">{{ circuit }}</span>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <span class="text-muted fst-italic">None selected</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Time Details -->
+                                        <div class="col-md-6">
+                                            <h6 class="text-uppercase text-muted mb-2">Time Configuration</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">Time Period:</label>
+                                                <div class="row g-2">
+                                                    <div class="col-6">
+                                                        <div class="bg-light p-2 rounded small">
+                                                            <i class="fas fa-calendar-day me-1"></i> From:<br>
+                                                            <strong>{{ selected_details.from_time }}</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="bg-light p-2 rounded small">
+                                                            <i class="fas fa-calendar-day me-1"></i> To:<br>
+                                                            <strong>{{ selected_details.to_time }}</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">Duration Filter:</label>
+                                                <div class="bg-light p-2 rounded d-flex align-items-center">
+                                                    <i class="fas fa-filter me-2"></i>
+                                                    <span>{{ selected_details.min_duration }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Analysis Stats -->
+                                    <div class="row mt-2">
+                                        <div class="col-12">
+                                            <h6 class="text-uppercase text-muted mb-3">Analysis Statistics</h6>
+                                            <div class="row g-2">
+                                                <div class="col-md-3 col-6">
+                                                    <div class="stats-card text-center">
+                                                        <div class="stats-icon mx-auto">
+                                                            <i class="fas fa-chart-line"></i>
+                                                        </div>
+                                                        <div class="stats-value">{{ circuit_plots|length }}</div>
+                                                        <div class="stats-label">Circuits</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="stats-card text-center">
+                                                        <div class="stats-icon mx-auto">
+                                                            <i class="fas fa-exchange-alt"></i>
+                                                        </div>
+                                                        <div class="stats-value">{{ switch_plots|length }}</div>
+                                                        <div class="stats-label">Switches</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="stats-card text-center">
+                                                        <div class="stats-icon mx-auto">
+                                                            <i class="fas fa-clock"></i>
+                                                        </div>
+                                                        <div class="stats-value" id="analysis-duration">-</div>
+                                                        <div class="stats-label">Hours</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3 col-6">
+                                                    <div class="stats-card text-center">
+                                                        <div class="stats-icon mx-auto">
+                                                            <i class="fas fa-stream"></i>
+                                                        </div>
+                                                        <div class="stats-value" id="data-points">-</div>
+                                                        <div class="stats-label">Data Points</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Add Download CSV Button -->
+                                    <div class="mt-3">
+                                        <button type="button" id="download-all-data-csv" class="btn btn-outline-success">
+                                            <i class="fas fa-file-csv me-2"></i>Download All Data as CSV
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-chart-line fa-3x text-secondary mb-3"></i>
+                                        <h5>No Analysis Configured</h5>
+                                        <p class="text-muted mb-0">Select parameters and generate analysis to view configuration details.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Section with Tabs -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Visualization Results</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-tabs nav-fill" id="plotTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active px-4" id="circuits-tab" data-bs-toggle="tab" data-bs-target="#circuits" type="button" role="tab">
+                                    <i class="fas fa-microchip me-1"></i> 
+                                    <span style="color: rgb(7, 7, 97);">Circuit Analysis</span> 
+                                    <span class="badge bg-primary ms-1">{{ circuit_plots|length }}</span>
+                                </button> 
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-4" id="switches-tab" data-bs-toggle="tab" data-bs-target="#switches" type="button" role="tab">
+                                    <i class="fas fa-exchange-alt me-1"></i> 
+                                    <span style="color: rgb(10, 10, 96);">Switch Analysis</span> 
+                                    <span class="badge bg-primary ms-1">{{ switch_plots|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-4" id="short-duration-tab" data-bs-toggle="tab" data-bs-target="#short-duration-circuits" type="button" role="tab">
+                                    <i class="fas fa-bolt me-1"></i> 
+                                    <!--<span style="color: rgb(139, 69, 19);">Short Duration Events</span> -->
+                                    <span style="color: rgb(139, 69, 19);">Faulty Circuit</span> 
+                                    <span class="badge bg-warning text-dark ms-1">{{ short_duration_plots|length if short_duration_plots else 0 }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-4" id="short-duration-switch-tab" data-bs-toggle="tab" data-bs-target="#short-duration-switches" type="button" role="tab">
+                                    <i class="fas fa-bolt me-1"></i><i class="fas fa-exchange-alt me-1"></i> 
+                                    <!--<span style="color: rgb(139, 35, 35);">Short Switch Events</span> -->
+                                    <span style="color: rgb(139, 35, 35);">faulty Switch</span>
+                                    <span class="badge bg-danger ms-1">{{ short_duration_switch_plots|length if short_duration_switch_plots else 0 }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Add Range Navigation Controls -->
+                        <div class="d-flex justify-content-center align-items-center py-2 bg-light border-bottom">
+                            <div class="btn-group" role="group" aria-label="Range slider navigation">
+                                <button type="button" id="range-nav-left" class="btn btn-sm btn-outline-primary" title="Move range left">
+                                    <i class="fas fa-chevron-left"></i> Move Left
+                                </button>
+                                <button type="button" id="range-nav-right" class="btn btn-sm btn-outline-primary" title="Move range right">
+                                    Move Right <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="ms-3 small text-muted fst-italic">
+                                <i class="fas fa-info-circle"></i> You can also use keyboard arrow keys to navigate
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content p-3">
+                            <!-- Circuit Plots Tab -->
+                            <div class="tab-pane fade show active" id="circuits" role="tabpanel">
+                                <div class="tab-header-actions d-flex justify-content-end mb-3">
+                                    <button type="button" id="download-circuits-csv" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-csv me-1"></i> Download Circuit Data
+                                    </button>
+                                </div>
+                                <div id="plots-container" class="w-100">
+                                    {% if circuit_plots and circuit_plots|length > 0 %}
+                                        {% for circuit, plot_html in circuit_plots.items() %}
+                                        <div id="circuit_plot_{{ circuit }}" class="plot-card position-relative mb-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h5 class="text-primary mb-0">{{ circuit }}</h5>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deletePlot('circuit_plot_{{ circuit }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Plot Container -->
+                                            <div id="plots_for_{{ circuit }}" class="w-100 plot-container bg-white border rounded p-2">              
+                                                {{ plot_html | safe }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <img src="{{ url_for('static', filename='images/empty-chart.svg') }}" alt="No data" width="120" class="mb-3 opacity-75">
+                                            <h5>No Circuit Data Available</h5>
+                                            <p class="text-muted">Configure parameters and generate analysis to view circuit plots.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Switch Plots Tab -->
+                            <div class="tab-pane fade" id="switches" role="tabpanel">
+                                <div class="tab-header-actions d-flex justify-content-end mb-3">
+                                    <button type="button" id="download-switches-csv" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-csv me-1"></i> Download Switch Data
+                                    </button>
+                                </div>
+                                <div id="switch-plots-container" class="w-100">
+                                    {% if switch_plots and switch_plots|length > 0 %}
+                                        {% for switch_id, plot_html in switch_plots.items() %}
+                                        <div id="switch_plot_{{ switch_id }}" class="plot-card position-relative mb-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h5 class="text-primary mb-0">{{ switch_id.replace('_', ' ').title() }}</h5>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deletePlot('switch_plot_{{ switch_id }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Plot Container -->
+                                            <div id="switch_plot_content_{{ switch_id }}" class="w-100 plot-container bg-white border rounded p-2">
+                                                {{ plot_html | safe }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <img src="{{ url_for('static', filename='images/empty-chart.svg') }}" alt="No data" width="120" class="mb-3 opacity-75">
+                                            <h5>No Switch Data Available</h5>
+                                            <p class="text-muted">Switch data is displayed when associated circuits are analyzed.</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- New Short Duration Circuits Tab -->
+                            <div class="tab-pane fade" id="short-duration-circuits" role="tabpanel">
+                                <div class="tab-header-actions d-flex justify-content-end mb-3">
+                                    <button type="button" id="download-short-duration-csv" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-csv me-1"></i> Download Short Duration Data
+                                    </button>
+                                </div>
+                                <div id="short-duration-plots-container" class="w-100">
+                                    {% if short_duration_plots and short_duration_plots|length > 0 %}
+                                        {% for circuit, plot_html in short_duration_plots.items() %}
+                                        <div id="short_duration_plot_{{ circuit }}" class="plot-card position-relative mb-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h5 class="text-warning mb-0">
+                                                    <i class="fas fa-bolt me-2"></i>{{ circuit }} 
+                                                    <small class="text-muted">(Short Duration Events)</small>
+                                                </h5>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deletePlot('short_duration_plot_{{ circuit }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Plot Container -->
+                                            <div id="short_duration_plots_for_{{ circuit }}" class="w-100 plot-container bg-white border rounded p-2">       
+                                                {{ plot_html | safe }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <img src="{{ url_for('static', filename='images/empty-chart.svg') }}" alt="No data" width="120" class="mb-3 opacity-75">
+                                            <h5>No Short Duration Events Available</h5>
+                                            <p class="text-muted">Configure parameters and generate analysis to view short duration events.</p>
+                                            <div class="mt-3">
+                                                <button class="btn btn-outline-warning" data-bs-toggle="collapse" href="#short-duration-help">
+                                                    <i class="fas fa-question-circle me-2"></i>What are short duration events?
+                                                </button>
+                                                <div class="collapse mt-3 w-75 mx-auto" id="short-duration-help">
+                                                    <div class="card card-body bg-light">
+                                                        <p>Short duration events are circuit activations that occur for a brief period of time, often indicating:</p>
+                                                        <ul class="text-start">
+                                                            <li>Momentary circuit failures or glitches</li>
+                                                            <li>Circuit noise or interference issues</li>
+                                                            <li>Potential track circuit bouncing</li>
+                                                            <li>Equipment malfunctions requiring attention</li>
+                                                        </ul>
+                                                        <p class="mb-0">Analyzing these events can help identify problematic circuits that might need maintenance.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- New Short Duration Switch Events Tab -->
+                            <div class="tab-pane fade" id="short-duration-switches" role="tabpanel">
+                                <div class="tab-header-actions d-flex justify-content-end mb-3">
+                                    <button type="button" id="download-short-duration-switch-csv" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-csv me-1"></i> Download Short Switch Events Data
+                                    </button>
+                                </div>
+                                <div id="short-duration-switch-plots-container" class="w-100">
+                                    {% if short_duration_switch_plots and short_duration_switch_plots|length > 0 %}
+                                        {% for switch_id, plot_html in short_duration_switch_plots.items() %}
+                                        {% set safe_switch_id = switch_id|replace(':', '_')|replace('.', '_') %}
+                                        {% set display_switch_id = switch_id|replace('_', ' ')|replace(':', ' ')|replace('.', ' ')|title %}
+                                        <div id="short_duration_switch_plot_{{ safe_switch_id }}" class="plot-card position-relative mb-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h5 class="text-danger mb-0">
+                                                    <i class="fas fa-bolt me-1"></i><i class="fas fa-exchange-alt me-1"></i>
+                                                    {{ display_switch_id }} 
+                                                    <small class="text-muted">(Short Duration Events)</small>
+                                                </h5>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deletePlot('short_duration_switch_plot_{{ safe_switch_id }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Plot Container -->
+                                            <div id="short_duration_switch_plots_for_{{ safe_switch_id }}" class="w-100 plot-container bg-white border rounded p-2">       
+                                                {{ plot_html | safe }}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-5">
+                                            <img src="{{ url_for('static', filename='images/empty-chart.svg') }}" alt="No data" width="120" class="mb-3 opacity-75">
+                                            <h5>No Short Duration Switch Events Available</h5>
+                                            <p class="text-muted">Configure parameters and generate analysis to view short duration switch events.</p>
+                                            <div class="mt-3">
+                                                <button class="btn btn-outline-danger" data-bs-toggle="collapse" href="#short-duration-switch-help">
+                                                    <i class="fas fa-question-circle me-2"></i>What are short duration switch events?
+                                                </button>
+                                                <div class="collapse mt-3 w-75 mx-auto" id="short-duration-switch-help">
+                                                    <div class="card card-body bg-light">
+                                                        <p>Short duration switch events are switch operations that occur for a brief period of time, potentially indicating:</p>
+                                                        <ul class="text-start">
+                                                            <li>Switch fluttering or chattering</li>
+                                                            <li>Intermittent switch failures</li>
+                                                            <li>Power supply issues</li>
+                                                            <li>Control system malfunctions</li>
+                                                            <li>Mechanical problems with switch operation</li>
+                                                        </ul>
+                                                        <p class="mb-0">Analyzing these events can help identify problematic switches that might need maintenance or replacement.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Removed: Unknown Circuits Tab -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Help Tips -->
+                <div class="alert alert-info mt-4 border-0 shadow-sm">
+                    <div class="d-flex">
+                        <div>
+                            <i class="fas fa-info-circle fa-2x me-3"></i>
+                        </div>
+                        <div>
+                            <h5>Analysis Tips</h5>
+                            <p class="mb-1">• Select a primary circuit and optional additional circuits for comparison.</p>
+                            <p class="mb-1">• Set a time range to narrow your analysis to specific periods.</p>
+                            <p class="mb-0">• The minimum duration filter helps remove noise from very short circuit activations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer bg-light mt-auto py-3">
+            <div class="container text-center">
+                <span>©2025 Railway Visualization System</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='navbar.js') }}"></script>
+    <!-- All JavaScript functionality is now in circuit_switch_analysis.js (loaded in <head>) -->
+</body>
+</html>

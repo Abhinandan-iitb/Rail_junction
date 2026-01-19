@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shunting movement Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='navbar.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='railway_data_visuals.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='dark-theme.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Include the sidebar navigation -->
+    {% include 'navbar_template.html' %}
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <div class="content-container">
+            <div class="railway-data-container">
+                <div class="section-header mb-4">
+                    <h1>Shunting movement Analytics</h1>
+                    <p>Net Data Analysis Tool - Upload and analyze railway network datasets</p>
+                </div>
+
+                <!-- File Upload Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-upload me-2"></i>Upload Data Files</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="fileUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="mainFile" class="form-label">Main Dataset (CSV)</label>
+                                        <input class="form-control" type="file" id="mainFile" name="main_file" accept=".csv">
+                                        <div class="form-text">Main dataset with Net_id, Chain_id and Circuit information</div>
+                                        {{ sample_data.main_file | safe if sample_data }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="jsonFile" class="form-label">Chain Dataset (CSV)</label>
+                                        <input class="form-control" type="file" id="jsonFile" name="json_file" accept=".csv">
+                                        <div class="form-text">Third dataset containing chain interval information</div>
+                                        {{ sample_data.json_file | safe if sample_data }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label for="startEndFile" class="form-label">Start-End Data (CSV)</label>
+                                        <input class="form-control" type="file" id="startEndFile" name="start_end_file" accept=".csv">
+                                        <div class="form-text">CSV file with Net_id, Chain_id, and start/end information</div>
+                                        {{ sample_data.start_end_file | safe if sample_data }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" id="useDefaultBtn" class="btn btn-secondary me-2" 
+                                        data-bs-toggle="tooltip" data-bs-placement="top" 
+                                        title="Use built-in datasets without uploading files">
+                                    <i class="fas fa-database me-2"></i><span id="defaultBtnText">Use Default Data</span>
+                                    <span id="defaultBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                </button>
+                                <button type="submit" id="uploadBtn" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i>Upload Files
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer" id="uploadStatus">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Upload both required files or use default data to begin analysis
+                        </div>
+                        <div class="small text-muted mt-2">
+                            <i class="fas fa-lightbulb me-1"></i> <strong>Tip:</strong> Click "Use Default Data" to quickly get started with built-in datasets
+                        </div>
+                    </div>
+                </div>
+                
+                    <!-- Data Summary Section -->
+                <div class="card mb-4" id="dataSummarySection" style="display:none;">
+                        <div class="card-header">
+                            <h5><i class="fas fa-clipboard-list me-2"></i>Data Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h6>Main Dataset</h6>
+                                        </div>
+                                        <div class="card-body" id="mainDataSummary">
+                                            <p class="text-muted">No data loaded</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-light">
+                                            <h6>Third Dataset</h6>
+                                        </div>
+                                        <div class="card-body" id="jsonDataSummary">
+                                            <p class="text-muted">No data loaded</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                <!-- Analysis Options Sections -->
+                <div id="analysisOptionsSection">
+                    <!-- Analysis methods dropdown -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <h5><i class="fas fa-list-ul me-2"></i>Available Analysis Methods</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <select class="form-select" id="jumpToAnalysis">
+                                        <option value="">-- Jump to Analysis Method --</option>
+                                        <optgroup label="Net ID Analysis">
+                                            <option value="netMethod1">1. Get All Records by Net ID</option>
+                                            <option value="netMethod2">2. Get Unique Chain IDs by Net ID</option>
+                                            <option value="netMethod3">3. Get Unique Circuit Names by Net ID</option>
+                                            <option value="netMethod4">4. Get Chains sequence by Net ID</option>
+                                        </optgroup>
+                                        <optgroup label="Chain ID Analysis">
+                                            <option value="chainMethod1">5. Show Start-End of Chain</option>
+                                            <option value="chainMethod2">6. Get Chain Sequence Length</option>
+                                            <option value="chainMethod3">7. Get Circuit Sequence by Chain ID</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-dark" id="jumpToBtn">
+                                        <i class="fas fa-chevron-down me-2"></i>Go to Selected Analysis
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Start-End Data Feature -->
+                    <h3 id="startEndMethodsHeader" class="section-divider mb-4"><span>Start-End Data Analysis</span></h3>
+                    
+                                        <!-- Start-End Data section moved to main upload form -->
+                    
+                    <!-- Start-End Data Query Section -->
+                    <div class="card mb-4 analysis-input-card" id="startEndQuerySection">
+                        <div class="card-header bg-success text-white">
+                            <h5><i class="fas fa-search me-2"></i>Query Start-End Data</h5>
+                            <span class="badge bg-light text-success">By Net ID</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Find all start and end points for a specific Net ID.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Net ID</span>
+                                <input type="text" class="form-control" id="startEndNetIdInput" placeholder="Enter Net ID as a number (e.g. 11)">
+                                <button class="btn btn-success" type="button" id="getStartEndDataBtn" data-method="feature_start_end">
+                                    <i class="fas fa-search me-2"></i>Get Start-End Data
+                                </button>
+                            </div>
+                            <div class="form-text">Leave empty to show all start-end data</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Start-End Data Results Section -->
+                    <div class="card mb-4 result-section" id="featureStartEndSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-route me-2"></i>Start-End Data Results</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="featureStartEnd">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="featureStartEndResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="featureStartEndInfo"></small>
+                        </div>
+                    </div>
+
+                    <!-- Net ID Analysis Methods -->
+                    <h3 id="netMethodsHeader" class="section-divider mb-4"><span>Net ID Analysis Methods</span></h3>
+                    
+                    <!-- 1. Get All Records by Net ID -->
+                    <div class="card mb-4 analysis-input-card" id="netMethod1">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-table me-2"></i>1. Get All Records by Net ID</h5>
+                            <span class="badge bg-light text-primary">Main Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Retrieves all records for a specific Net ID from the main dataset.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Net ID</span>
+                                <input type="number" class="form-control" id="getRecordsNetIdInput" min="1" placeholder="Enter Net ID">
+                                <button class="btn btn-primary" type="button" id="getRecordsByNetIdBtn" data-method="get_records_by_netid">
+                                    <i class="fas fa-search me-2"></i>Get Records
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. Get Unique Chain IDs by Net ID -->
+                    <div class="card mb-4 analysis-input-card" id="netMethod2">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-link me-2"></i>2. Get Unique Chain IDs by Net ID</h5>
+                            <span class="badge bg-light text-primary">Main Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Finds all unique chain IDs associated with a specific Net ID.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Net ID</span>
+                                <input type="number" class="form-control" id="uniqueChainsNetIdInput" min="1" placeholder="Enter Net ID">
+                                <button class="btn btn-primary" type="button" id="getUniqueChainsByNetIdBtn" data-method="get_unique_chains_by_netid">
+                                    <i class="fas fa-search me-2"></i>Get Unique Chains
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 3. Get Unique Circuit Names by Net ID -->
+                    <div class="card mb-4 analysis-input-card" id="netMethod3">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-microchip me-2"></i>3. Get Unique Circuit Names by Net ID</h5>
+                            <span class="badge bg-light text-primary">Main Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Lists all unique circuit names used in a specific Net ID.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Net ID</span>
+                                <input type="number" class="form-control" id="uniqueCircuitsNetIdInput" min="1" placeholder="Enter Net ID">
+                                <button class="btn btn-primary" type="button" id="getUniqueCircuitsByNetIdBtn" data-method="get_unique_circuits_by_netid">
+                                    <i class="fas fa-search me-2"></i>Get Unique Circuits
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 4. Get Chains sequence by Net ID -->
+                    <div class="card mb-4 analysis-input-card" id="netMethod4">
+                        <div class="card-header bg-info text-white">
+                            <h5><i class="fas fa-sitemap me-2"></i>4. Get Chains sequence by Net ID</h5>
+                            <span class="badge bg-light text-info">Third Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Retrieves chain interval information for a specific Net ID from the third dataset.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Net ID</span>
+                                <input type="number" class="form-control" id="chainsNetIdInput" min="1" placeholder="Enter Net ID">
+                                <button class="btn btn-info text-white" type="button" id="getChainsByNetIdBtn" data-method="get_chains_by_netid">
+                                    <i class="fas fa-search me-2"></i>Get Chain Intervals
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chain ID Analysis Methods -->
+                    <h3 id="chainMethodsHeader" class="section-divider mb-4"><span>Chain ID Analysis Methods</span></h3>
+                    
+                    <!-- 5. Show Start-End of Chain -->
+                    <div class="card mb-4 analysis-input-card" id="chainMethod1">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-project-diagram me-2"></i>5. Show Start-End of Chain</h5>
+                            <span class="badge bg-light text-primary">Main Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Shows the start and end points of a specific chain.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Chain ID</span>
+                                <input type="number" class="form-control" id="startEndChainIdInput" min="1" placeholder="Enter Chain ID">
+                                <button class="btn btn-primary" type="button" id="showStartEndChainBtn" data-method="show_start_end_chain">
+                                    <i class="fas fa-search me-2"></i>Get Start-End of Chain
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 6. Get Chain Sequence Length -->
+                    <div class="card mb-4 analysis-input-card" id="chainMethod2">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-ruler me-2"></i>6. Get Chain Sequence Length</h5>
+                            <span class="badge bg-light text-primary">Main Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Calculates the sequence length for a specific chain.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Chain ID</span>
+                                <input type="number" class="form-control" id="chainSequenceLengthIdInput" min="1" placeholder="Enter Chain ID">
+                                <button class="btn btn-primary" type="button" id="getChainSequenceLengthBtn" data-method="get_chain_sequence_length">
+                                    <i class="fas fa-search me-2"></i>Get Sequence Length
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 7. Get Circuit Sequence by Chain ID -->
+                    <div class="card mb-4 analysis-input-card" id="chainMethod3">
+                        <div class="card-header bg-primary text-white">
+                            <h5><i class="fas fa-list-ol me-2"></i>7. Get Circuit Sequence by Chain ID</h5>
+                            <span class="badge bg-light text-primary">Main Dataset</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">Lists the complete circuit sequence for a specific chain.</p>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">Chain ID</span>
+                                <input type="number" class="form-control" id="circuitSequenceChainIdInput" min="1" placeholder="Enter Chain ID">
+                                <button class="btn btn-primary" type="button" id="getChainCircuitSequenceBtn" data-method="get_chain_circuit_sequence">
+                                    <i class="fas fa-search me-2"></i>Get Circuit Sequence
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analysis Results Sections -->
+                <div class="result-sections">
+                    <!-- 1. Get All Records by Net ID (Main Dataset) -->
+                    <div class="card mb-4 result-section" id="getRecordsByNetIdSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-table me-2"></i>1. Records by Net ID</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="getRecordsByNetId">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="getRecordsByNetIdResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="getRecordsByNetIdInfo"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. Get Unique Chain IDs by Net ID (Main Dataset) -->
+                    <div class="card mb-4 result-section" id="getUniqueChainsByNetIdSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-link me-2"></i>2. Unique Chain IDs by Net ID</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="getUniqueChainsByNetId">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="getUniqueChainsByNetIdResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="getUniqueChainsByNetIdInfo"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 3. Get Unique Circuit Names by Net ID (Main Dataset) -->
+                    <div class="card mb-4 result-section" id="getUniqueCircuitsByNetIdSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-microchip me-2"></i>3. Unique Circuit Names by Net ID</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="getUniqueCircuitsByNetId">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="getUniqueCircuitsByNetIdResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="getUniqueCircuitsByNetIdInfo"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 4. Get Chains sequence by Net ID (Third Dataset) -->
+                    <div class="card mb-4 result-section" id="getChainsByNetIdSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-sitemap me-2"></i>4. Chain Intervals by Net ID</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="getChainsByNetId">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="getChainsByNetIdResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="getChainsByNetIdInfo"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 5. Show Start-End of Chain (by Chain ID) -->
+                    <div class="card mb-4 result-section" id="showStartEndChainSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-project-diagram me-2"></i>5. Start-End of Chain</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="showStartEndChain">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="showStartEndChainResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="showStartEndChainInfo"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 6. Get Sequence Length by Chain ID -->
+                    <div class="card mb-4 result-section" id="getChainSequenceLengthSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-ruler me-2"></i>6. Chain Sequence Length</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="getChainSequenceLength">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="getChainSequenceLengthResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="getChainSequenceLengthInfo"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 7. Get Circuit Sequence by Chain ID -->
+                    <div class="card mb-4 result-section" id="getChainCircuitSequenceSection" style="display:none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-list-ol me-2"></i>7. Circuit Sequence by Chain ID</h5>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary export-btn" data-section="getChainCircuitSequence">
+                                    <i class="fas fa-download me-1"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="results-container table-responsive" id="getChainCircuitSequenceResults"></div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="results-info text-muted" id="getChainCircuitSequenceInfo"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='navbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='railway_data_visuals.js') }}"></script>
+</body>
+</html>
