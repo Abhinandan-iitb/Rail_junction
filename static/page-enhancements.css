@@ -1,0 +1,317 @@
+/* Additional page-specific styling enhancements */
+
+/* Enhance the container styling */
+.container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Page header with underline effect */
+h2.text-center {
+    display: inline-block;
+    position: relative;
+    padding-bottom: 10px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 30px;
+}
+
+h2.text-center::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 4px;
+    width: 80px;
+    background: linear-gradient(90deg, #4361ee, #4cc9f0);
+    border-radius: 4px;
+}
+
+/* Add gradient background with subtle pattern */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(120deg, rgba(240, 242, 248, 0.8), rgba(245, 247, 250, 0.9)),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234361ee' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    z-index: -1;
+}
+
+/* Enhance navbar */
+.navbar {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    background-image: linear-gradient(135deg, #3f51b5 0%, #4361ee 100%);
+    transition: all 0.3s ease;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.navbar-brand i {
+    animation: train 5s linear infinite;
+}
+
+@keyframes train {
+    0% { transform: translateX(-10px); }
+    50% { transform: translateX(10px); }
+    100% { transform: translateX(-10px); }
+}
+
+/* 3D Tab styling */
+.nav-tabs {
+    background: transparent;
+    border-bottom: none;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #495057;
+    font-weight: 600;
+    padding: 14px 24px;
+    border-radius: 10px 10px 0 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    margin-right: 6px;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+    transform-origin: bottom;
+    transform: perspective(300px) rotateX(3deg);
+}
+
+.nav-tabs .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+    z-index: -1;
+}
+
+.nav-tabs .nav-link.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #4361ee, #3a56d4);
+    transform: perspective(300px) rotateX(0deg) translateY(-3px);
+    box-shadow: 0 -2px 15px rgba(67, 97, 238, 0.3);
+    z-index: 3;
+}
+
+.nav-tabs .nav-link:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.9);
+    transform: perspective(300px) rotateX(0deg);
+}
+
+.tab-content {
+    background-color: #ffffff;
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+    padding: 25px;
+}
+
+/* Make badges more attractive */
+.badge {
+    padding: 6px 10px;
+    border-radius: 30px;
+    font-weight: 500;
+    font-size: 12px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Circuit plots styling */
+#circuits, #switches {
+    min-height: 300px;
+}
+
+/* Enhance the plot cards */
+.position-relative {
+    border: none !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+    margin-bottom: 32px !important;
+    padding: 0 !important;
+}
+
+.position-relative h5 {
+    padding: 18px 20px;
+    margin: 0;
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.position-relative .plot-container {
+    padding: 15px;
+}
+
+.position-relative:hover {
+    transform: translateY(-8px) !important;
+    box-shadow: 0 20px 40px rgba(67, 97, 238, 0.15) !important;
+}
+
+.plot-highlight {
+    border: none !important;
+    box-shadow: 0 25px 50px rgba(67, 97, 238, 0.25) !important;
+    transform: translateY(-10px) !important;
+}
+
+/* Delete button styling */
+.btn-danger {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    line-height: 30px;
+    text-align: center;
+    font-size: 16px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(229, 62, 62, 0.3);
+    margin: 10px !important;
+}
+
+.position-relative:hover .btn-danger {
+    opacity: 1;
+}
+
+/* Empty state styling */
+.text-center .floating-icon {
+    font-size: 3rem;
+    color: #4361ee;
+    opacity: 0.5;
+    margin-bottom: 15px;
+}
+
+/* Improve transition performance */
+.position-relative, .nav-link, .form-control, button {
+    will-change: transform, opacity, box-shadow;
+}
+
+/* Selected parameters styling */
+.d-flex .text-primary {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    background-color: rgba(67, 97, 238, 0.1);
+    color: #4361ee;
+    border-radius: 50%;
+    padding: 20px;
+}
+
+/* Add 3D perspective to plot hover */
+.hover-card {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transform-origin: center;
+    will-change: transform, box-shadow;
+}
+
+.hover-card:hover {
+    transform: perspective(1000px) translateY(-8px) rotateX(2deg) rotateY(2deg);
+}
+
+/* Make icons in tabs more attractive */
+.nav-link i {
+    margin-right: 8px;
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.nav-link.active i {
+    transform: scale(1.2);
+}
+
+/* Floating icon animation */
+.floating-icon {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Notification styling */
+.notification {
+    border-radius: 8px;
+    padding: 15px 25px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    font-weight: 500;
+}
+
+/* Add subtle background grid to plots */
+.plot-container {
+    background-image: linear-gradient(rgba(241, 243, 248, 0.5) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(241, 243, 248, 0.5) 1px, transparent 1px);
+    background-size: 20px 20px;
+    border-radius: 0 0 16px 16px;
+}
+
+/* Add scrollbar styling for checkboxes */
+.checkbox-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.checkbox-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.checkbox-container::-webkit-scrollbar-thumb {
+    background: rgba(67, 97, 238, 0.3);
+    border-radius: 10px;
+}
+
+.checkbox-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(67, 97, 238, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav-tabs .nav-link {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .nav-tabs .nav-link i {
+        margin-right: 5px;
+    }
+    
+    .badge {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+}
+
+/* Adjust the font sizes for small devices */
+@media (max-width: 576px) {
+    h2.text-center {
+        font-size: 1.5rem;
+    }
+    
+    .form-header h4 {
+        font-size: 1.2rem;
+    }
+    
+    .form-header p {
+        font-size: 0.85rem;
+    }
+}

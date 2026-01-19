@@ -1,0 +1,168 @@
+/**
+ * Railway Visualization System - Dark Theme
+ * Styles for the dark mode theme
+ */
+
+body.dark-theme {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Dark theme for sidebar */
+body.dark-theme .sidebar {
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+body.dark-theme .sidebar .sidebar-header {
+    background: #000000;
+}
+
+body.dark-theme .sidebar ul li a {
+    color: #e0e0e0;
+}
+
+body.dark-theme .sidebar ul li a:hover {
+    background: #000000;
+    color: #3498db;
+}
+
+/* Dark theme for top navbar */
+body.dark-theme .top-navbar {
+    background: #1a1a1a;
+}
+
+/* Dark theme for cards */
+body.dark-theme .card {
+    background-color: #1e1e1e;
+    border-color: #333;
+}
+
+body.dark-theme .card-header {
+    background-color: #252525;
+    border-bottom-color: #333;
+}
+
+body.dark-theme .card-footer {
+    background-color: #252525;
+    border-top-color: #333;
+}
+
+/* Dark theme for tables */
+body.dark-theme .table {
+    color: #e0e0e0;
+}
+
+body.dark-theme .table thead th {
+    background-color: #252525;
+    color: #e0e0e0;
+    border-color: #333;
+}
+
+body.dark-theme .table tbody tr {
+    border-color: #333;
+}
+
+body.dark-theme .table tbody td {
+    border-color: #333;
+}
+
+body.dark-theme .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-theme .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.075);
+}
+
+/* Dark theme for inputs */
+body.dark-theme .form-control,
+body.dark-theme .form-select {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+body.dark-theme .form-control:focus,
+body.dark-theme .form-select:focus {
+    background-color: #2d2d2d;
+    border-color: #3498db;
+    color: #e0e0e0;
+}
+
+body.dark-theme .input-group-text {
+    background-color: #252525;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+/* Dark theme for buttons */
+body.dark-theme .btn-outline-secondary {
+    color: #adb5bd;
+    border-color: #444;
+}
+
+body.dark-theme .btn-outline-secondary:hover {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+/* Dark theme for alerts */
+body.dark-theme .alert-info {
+    background-color: rgba(23, 162, 184, 0.2);
+    color: #9fcdff;
+    border-color: rgba(23, 162, 184, 0.4);
+}
+
+body.dark-theme .alert-success {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #b1dfbb;
+    border-color: rgba(40, 167, 69, 0.4);
+}
+
+body.dark-theme .alert-warning {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #fff3cd;
+    border-color: rgba(255, 193, 7, 0.4);
+}
+
+body.dark-theme .alert-danger {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #f8d7da;
+    border-color: rgba(220, 53, 69, 0.4);
+}
+
+/* Dark theme for results containers */
+body.dark-theme .results-container {
+    background-color: #252525;
+}
+
+/* Dark theme for inline results */
+body.dark-theme .inline-results-container {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Other dark theme customizations */
+body.dark-theme .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Dark theme for section dividers */
+body.dark-theme .section-divider span {
+    background-color: #121212;
+}
+
+body.dark-theme .section-divider::before,
+body.dark-theme .section-divider::after {
+    border-bottom: 1px solid #333;
+}
+
+/* Pandas DataFrame tables in dark theme */
+body.dark-theme .dataframe th, 
+body.dark-theme .dataframe td {
+    border-color: #333;
+}
+
+body.dark-theme .dataframe thead th {
+    background-color: #252525;
+}

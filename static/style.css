@@ -1,0 +1,378 @@
+/* Common styles for the entire application */
+
+/* ==================== General Styling ==================== */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* ==================== Dashboard Styles ==================== */
+.dashboard-container {
+    max-width: 1000px;
+    margin: 100px auto;
+    padding: 40px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.dashboard-container h1 {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+p {
+    color: #7f8c8d;
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.dashboard-btn {
+    padding: 20px 30px;
+    width: 300px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.dashboard-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+.phase1-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.phase2-btn {
+    background: linear-gradient(135deg, #2c3e50, #1a5276);
+}
+
+/* ==================== Phase 2 App Styles ==================== */
+/* Navbar styles */
+.navbar {
+    background-color: #2c3e50;
+    padding: 15px 0;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 22px;
+}
+
+.nav-link {
+    font-weight: 500;
+    margin-left: 5px;
+    transition: color 0.2s ease;
+}
+
+/* Main container */
+.main-container {
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: #34495e;
+    color: white;
+    padding: 15px 20px;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h4 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+/* Form elements */
+.form-label {
+    font-weight: 500;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+}
+
+.label-text {
+    margin-left: 5px;
+}
+
+.form-control, .form-select {
+    border: 1px solid #e0e0e0;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.text-helper {
+    color: #7f8c8d;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Buttons */
+.generate-btn {
+    background-color: #2980b9;
+    border-color: #2980b9;
+    padding: 10px 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.generate-btn:hover {
+    background-color: #3498db;
+    border-color: #3498db;
+    transform: translateY(-2px);
+}
+
+/* Stats Cards */
+.stats-row {
+    margin-bottom: 30px;
+}
+
+.stats-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.stats-icon {
+    background-color: #e3f2fd;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 20px;
+    color: #2980b9;
+}
+
+.stats-info {
+    flex: 1;
+}
+
+.stats-info h5 {
+    margin: 0;
+    font-size: 14px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.stats-value {
+    margin: 5px 0 0;
+    font-weight: 700;
+    font-size: 24px;
+    color: #2c3e50;
+}
+
+/* Visualization container */
+.visualization-container {
+    min-height: 400px;
+    width: 100%;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fullscreen mode */
+.viz-card.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1050;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    margin: 0;
+}
+
+.viz-card.fullscreen .card-body {
+    height: calc(100% - 60px);
+    padding: 0;
+}
+
+.viz-card.fullscreen .visualization-container {
+    height: 100%;
+    border-radius: 0;
+}
+
+/* Loading spinner */
+.spinner {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    margin: 20px auto;
+}
+
+.double-bounce1, .double-bounce2 {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #3498db;
+    opacity: 0.6;
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: bounce 2.0s infinite ease-in-out;
+}
+
+.double-bounce2 {
+    animation-delay: -1.0s;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(0.0); } 
+    50% { transform: scale(1.0); }
+}
+
+.loading-text {
+    margin-top: 15px;
+    color: #7f8c8d;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Toast notifications */
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    min-width: 300px;
+    z-index: 1060;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.toast-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-icon {
+    margin-right: 15px;
+    font-size: 20px;
+}
+
+.toast-success .toast-icon {
+    color: #27ae60;
+}
+
+.toast-warning .toast-icon {
+    color: #f39c12;
+}
+
+.toast-danger .toast-icon {
+    color: #e74c3c;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+}
+
+/* Footer */
+.footer {
+    padding: 20px 0;
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+/* ==================== Phase 1 App Styles ==================== */
+.plot-container {
+    overflow-x: auto;
+    min-height: 400px;
+}
+
+/* Make sure all Plotly charts are responsive */
+.js-plotly-plot {
+    width: 100% !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-container {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .dashboard-btn {
+        width: 100%;
+    }
+    
+    .stats-card {
+        margin-bottom: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .card-header {
+        flex-direction: column;
+    }
+    
+    .viz-controls {
+        margin-top: 10px;
+    }
+    
+    .btn-text {
+        display: none;
+    }
+}

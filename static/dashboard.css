@@ -1,0 +1,153 @@
+/**
+ * Railway Visualization System - Dashboard Styles
+ */
+
+/* ==================== Base Styles ==================== */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f0 100%);
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+}
+
+/* ==================== Content Container ==================== */
+.content-container {
+    margin-left: 250px;
+    padding: 20px;
+    transition: margin-left 0.3s;
+}
+
+/* ==================== Dashboard Container ==================== */
+.dashboard-container {
+    padding: 30px;
+}
+
+/* ==================== Dashboard Header ==================== */
+.dashboard-header {
+    margin-bottom: 30px;
+}
+
+.dashboard-title {
+    font-size: 2.2rem;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.dashboard-subtitle {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+}
+
+/* ==================== Card Grid ==================== */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+/* ==================== Dashboard Card ==================== */
+.dashboard-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+/* ==================== Card Image ==================== */
+.card-image {
+    height: 250px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+.card-image::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.25);
+    transition: background 0.3s;
+}
+
+.dashboard-card:hover .card-image::after {
+    background: rgba(0,0,0,0.15);
+}
+
+/* ==================== Card Content ==================== */
+.card-content {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.card-description {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+/* ==================== Card Specific Styles ==================== */
+#train-movement .card-image {
+    background-image: url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
+    background-size: cover;
+}
+
+#signal-analysis .card-image {
+    background-image: url('/static/images/railway.jpg');
+    background-size: cover;
+}
+
+#data-visualization .card-image {
+    background-image: url('/static/images/railway_image.jpg');
+    background-size: cover;
+}
+
+#railway-data-visuals .card-image {
+    background-image: url('/static/images/Shunting_data_Analytics.jpg');
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-color: #1a1a2e;
+}
+
+#shunting-visuals .card-image {
+    background-image: url('/static/images/shunting_image.jpg');
+    background-size: cover;
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 768px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .content-container {
+        margin-left: 0;
+    }
+}
+
+
