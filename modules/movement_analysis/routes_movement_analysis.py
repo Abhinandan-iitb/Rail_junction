@@ -27,6 +27,74 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__f
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+# Helper Functions
+def _extract_routes_from_request(data):
+    """Extract and normalize routes from request data"""
+    routes = data.get("routes", [])
+    if isinstance(routes, str):
+        routes = [routes]
+    
+    if not routes:
+        route = data.get("route")
+        if route:
+            routes = [route]
+    
+    return routes
+
+def _parse_time_range(data):
+    """Parse time range from request and determine if chunked processing is needed"""
+    from_time = None
+    to_time = None
+    chunked_processing = False
+    
+    if data.get("from_time") and data.get("to_time"):
+        from_time = pd.to_datetime(data.get("from_time"))
+        to_time = pd.to_datetime(data.get("to_time"))
+        
+        time_span_days = (to_time - from_time).total_seconds() / (24 * 3600)
+        if time_span_days > 7:
+            chunked_processing = True
+            logger.info(f"Using chunked processing for {time_span_days:.1f} day span")
+    
+    return from_time, to_time, chunked_processing
+
+def _collect_route_data(routes, from_time, to_time, chunked_processing):
+    """Collect circuit data for all selected routes"""
+    combined_df = pd.DataFrame()
+    movement_counts = {}
+    movement_id_field = "Movement_id"
+    
+    if chunked_processing:
+        chunk_size = pd.Timedelta(days=3)
+        current_start = from_time
+        
+        while current_start < to_time:
+            current_end = min(current_start + chunk_size, to_time)
+            logger.info(f"Processing chunk: {current_start} to {current_end}")
+            
+            for route_name in routes:
+                chunk_df = get_circuit_data(route_name, current_start, current_end)
+                if not chunk_df.empty:
+                    combined_df = pd.concat([combined_df, chunk_df])
+            
+            current_start = current_end
+    else:
+        for route_name in routes:
+            df = get_circuit_data(route_name, from_time, to_time)
+            if not df.empty:
+                if movement_id_field in df.columns:
+                    movement_counts[route_name] = df[movement_id_field].nunique()
+                combined_df = pd.concat([combined_df, df])
+    
+    # Calculate movement counts if not populated during standard processing
+    if not movement_counts and movement_id_field in combined_df.columns:
+        for route_name in routes:
+            route_data = combined_df[combined_df["Route_id"] == route_name]
+            if not route_data.empty:
+                movement_counts[route_name] = route_data[movement_id_field].nunique()
+    
+    return combined_df, movement_counts
+
 @main.route("/", methods=["GET"])
 def index():
     """Renders the Movement Analysis dashboard page"""
@@ -103,8 +171,6 @@ def route_details(route_name):
 def plot():
     """API endpoint to generate plot data based on selected routes and time range"""
     try:
-        # Check if required uploads exist
-        from modules.movement_analysis.data_load_movement_analysis import has_required_uploads
         has_required, error_msg = has_required_uploads()
         if not has_required:
             return jsonify({
@@ -114,98 +180,34 @@ def plot():
                 "selectedRoutes": []
             }), 400
         
-        # Parse request data
         data = request.json
-        
-        # Handle single route or multiple routes
-        routes = data.get("routes", [])
-        if isinstance(routes, str):
-            routes = [routes]
-        
-        if not routes:
-            route = data.get("route")
-            if route:
-                routes = [route]
+        routes = _extract_routes_from_request(data)
         
         if not routes:
             return jsonify({
                 "plot": "<div class='alert alert-warning'><i class='fas fa-exclamation-triangle'></i> No routes selected.</div>",
             }), 400
         
-        # Process time range 
-        from_time = None
-        to_time = None
-        chunked_processing = False
+        from_time, to_time, chunked_processing = _parse_time_range(data)
         
-        if data.get("from_time") and data.get("to_time"):
-            from_time = pd.to_datetime(data.get("from_time"))
-            to_time = pd.to_datetime(data.get("to_time"))
-            
-            # Use chunked processing for large time spans
-            time_span_days = (to_time - from_time).total_seconds() / (24 * 3600)
-            if time_span_days > 7:
-                chunked_processing = True
-                logger.info(f"Using chunked processing for large time span: {time_span_days:.1f} days")
-        
-        logger.info(f"Generating timeline plot for routes: {routes}")
+        logger.info(f"Generating timeline plot for {len(routes)} routes: {routes}")
         if from_time and to_time:
             logger.info(f"Time range: {from_time} to {to_time}")
         
-        # Get circuit data
-        combined_df = pd.DataFrame()
-        movement_counts = {}
+        combined_df, movement_counts = _collect_route_data(routes, from_time, to_time, chunked_processing)
         
-        if chunked_processing:
-            # Process in chunks of 3 days
-            chunk_size = pd.Timedelta(days=3)
-            current_start = from_time
-            
-            while current_start < to_time:
-                current_end = min(current_start + chunk_size, to_time)
-                
-                logger.info(f"Processing chunk: {current_start} to {current_end}")
-                for route_name in routes:
-                    chunk_df = get_circuit_data(route_name, current_start, current_end)
-                    if not chunk_df.empty:
-                        combined_df = pd.concat([combined_df, chunk_df])
-                
-                current_start = current_end
-        else:
-            # Standard processing
-            for route_name in routes:
-                df = get_circuit_data(route_name, from_time, to_time)
-                if not df.empty:
-                    movement_id_field = "Movement_id"
-                    if movement_id_field in df.columns:
-                        movement_counts[route_name] = df[movement_id_field].nunique()
-                    combined_df = pd.concat([combined_df, df])
-        
-        # Return message if no data found
         if combined_df.empty:
-            logger.warning(f"No data found for selected routes")
+            logger.warning("No data found for selected routes")
             return jsonify({
                 "plot": "<div class='alert alert-warning'><i class='fas fa-exclamation-triangle'></i> No data found for the selected routes and time range.</div>",
-                "stats": {
-                    "dataPoints": 0,
-                    "avgSpeed": 0,
-                    "movements": 0
-                },
+                "stats": {"dataPoints": 0, "avgSpeed": 0, "movements": 0},
                 "movementCounts": {},
                 "selectedRoutes": routes
             })
         
-        # Calculate movement counts if needed
-        movement_id_field = "Movement_id"
-        if not movement_counts and movement_id_field in combined_df.columns:
-            for route_name in routes:
-                route_data = combined_df[combined_df["Route_id"] == route_name]
-                if not route_data.empty:
-                    movement_counts[route_name] = route_data[movement_id_field].nunique()
-        
-        # Generate plot
         plot_html = generate_plot(combined_df)
         
-        # Calculate statistics
+        movement_id_field = "Movement_id"
         stats = {
             "dataPoints": len(combined_df),
             "avgSpeed": round(combined_df["avg_speed"].mean(), 1) if "avg_speed" in combined_df.columns and not combined_df.empty else 0,
@@ -213,7 +215,7 @@ def plot():
             "routes": len(routes)
         }
         
-        logger.info(f"Successfully generated timeline plot with {len(combined_df)} data points across {stats['movements']} movements from {stats['routes']} routes")
+        logger.info(f"Generated timeline plot: {len(combined_df)} points, {stats['movements']} movements, {stats['routes']} routes")
         
         return jsonify({
             "plot": plot_html, 
@@ -233,49 +235,25 @@ def plot_overview():
     """Generates a low-detail overview plot for quick initial display"""
     try:
         data = request.json
-        routes = data.get("routes", [])
-        if isinstance(routes, str):
-            routes = [routes]
-        
-        if not routes:
-            route = data.get("route")
-            if route:
-                routes = [route]
+        routes = _extract_routes_from_request(data)
         
         if not routes:
             return jsonify({
                 "plot": "<div class='alert alert-warning'><i class='fas fa-exclamation-triangle'></i> No routes selected.</div>",
             }), 400
             
-        # Get time range if provided
-        from_time = None
-        to_time = None
-        if data.get("from_time") and data.get("to_time"):
-            from_time = pd.to_datetime(data.get("from_time"))
-            to_time = pd.to_datetime(data.get("to_time"))
-            
-        # Get data
-        combined_df = pd.DataFrame()
-        for route_name in routes:
-            df = get_circuit_data(route_name, from_time, to_time)
-            if not df.empty:
-                combined_df = pd.concat([combined_df, df])
-                
+        from_time, to_time, _ = _parse_time_range(data)
+        combined_df, _ = _collect_route_data(routes, from_time, to_time, chunked_processing=False)
+        
         if combined_df.empty:
             return jsonify({
                 "plot": "<div class='alert alert-warning'><i class='fas fa-exclamation-triangle'></i> No data found for the selected routes and time range.</div>",
-                "stats": {
-                    "dataPoints": 0,
-                    "avgSpeed": 0,
-                    "movements": 0
-                }
+                "stats": {"dataPoints": 0, "avgSpeed": 0, "movements": 0}
             })
         
-        # Generate low-detail plot
         row_count = len(combined_df)
         plot_html = generate_plot(combined_df, low_detail_mode=True)
         
-        # Calculate stats
         movement_id_field = "Movement_id"
         stats = {
             "dataPoints": row_count,
